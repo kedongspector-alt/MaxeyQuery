@@ -1,0 +1,60 @@
+name: Build MaxeyQuery IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build iOS application
+        run: |
+          xcodebuild \
+            -project MaxeyQuery.xcodeproj \
+            -scheme MaxeyQuery \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/DerivedData \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package unsigned IPA
+        run: |
+          set -e
+
+          APP="build/DerivedData/Build/Products/Release-iphoneos/MaxeyQuery.app"
+
+          test -d "$APP"
+
+          mkdir -p build/ipa/Payload
+          cp -R "$APP" build/ipa/Payload/
+
+          cd build/ipa
+          zip -qry ../MaxeyQuery-unsigned.ipa Payload
+
+          echo "IPA created:"
+          ls -lh ../MaxeyQuery-unsigned.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaxeyQuery-unsigned-IPA
+          path: build/MaxeyQuery-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14
