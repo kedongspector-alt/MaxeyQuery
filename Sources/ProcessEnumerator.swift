@@ -89,6 +89,25 @@ enum ProcessEnumerator {
             ? String(cString: ownNameBuffer)
             : "unavailable"
 
+        // Probe PID 1 (normally launchd on iOS).
+        var pid1Buffer = [CChar](repeating: 0, count: 256)
+
+        errorPointer.pointee = 0
+
+        let pid1Result = pid1Buffer.withUnsafeMutableBufferPointer {
+            processName(
+                1,
+                UnsafeMutableRawPointer($0.baseAddress!),
+                UInt32($0.count)
+            )
+        }
+
+        let pid1Errno = errorPointer.pointee
+
+        let pid1Name = pid1Result > 0
+            ? String(cString: pid1Buffer)
+            : "unavailable"
+
         // First call: ask for the estimated PID count.
         errorPointer.pointee = 0
 
@@ -106,6 +125,10 @@ enum ProcessEnumerator {
                 Self process name: \(ownName)
                 Self proc_name result: \(ownNameResult)
                 Self proc_name \(errnoText(ownNameErrno))
+
+                PID 1 name: \(pid1Name)
+                PID 1 proc_name result: \(pid1Result)
+                PID 1 proc_name \(errnoText(pid1Errno))
                 """
             )
         }
