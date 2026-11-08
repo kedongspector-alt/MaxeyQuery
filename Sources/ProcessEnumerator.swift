@@ -67,7 +67,7 @@ enum ProcessEnumerator {
             to: ProcessName.self
         )
 
-        let errorPointer = __error()
+        let errorPointer = __error()!
 
         // Test whether proc_name can identify our own app.
         let ownPID = getpid()
